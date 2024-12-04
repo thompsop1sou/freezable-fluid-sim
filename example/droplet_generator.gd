@@ -1,3 +1,4 @@
+class_name DropletGenerator
 extends Node3D
 
 
@@ -15,18 +16,32 @@ const MAX_DROPLETS = 4000
 @export_range(0, MAX_DROPLETS)
 var droplets_to_generate: int = 2000
 
-## The current number of droplets that have been generated.
-var num_droplets: int = 0
+## The fluid server that the generated droplets should be added to.
+@export var fluid_server: FluidServer
+
+## The file path to the scene which should be used for new droplets.
+@export_file var droplet_scene_file: String
 
 
 
 # PRIVATE PROPERTIES
 
 # The droplet scene.
-var _cpp_droplet_scene: PackedScene = preload("res://fluid/droplet.tscn")
+@onready var _droplet_scene: PackedScene = load(droplet_scene_file)
 
 # Elapsed time since last droplet generation.
 var _elapsed_time: float = 0.0
+
+# The current number of droplets that have been generated.
+var _num_droplets: int = 0
+
+
+
+# PUBLIC METHODS
+
+## Returns the number of droplets that have been generated.
+func get_num_droplets() -> int:
+	return _num_droplets
 
 
 
@@ -36,21 +51,21 @@ var _elapsed_time: float = 0.0
 func _physics_process(delta: float) -> void:
 	_elapsed_time += delta
 	# Check if we should generate a new droplet
-	if _elapsed_time >= generation_interval and num_droplets < droplets_to_generate:
+	if _elapsed_time >= generation_interval and _num_droplets < droplets_to_generate:
 		_elapsed_time = _elapsed_time - generation_interval
-		# If working with droplet scenes...
-		_generate_droplet_scene()
-		# Increment current number of droplets
-		num_droplets += 1
+		_generate_droplet()
 
 # Generates a droplet from a scene.
-func _generate_droplet_scene()  -> void:
+func _generate_droplet()  -> void:
 	# Create the appropriate droplet type
-	var droplet_node: RigidBody3D = _cpp_droplet_scene.instantiate()
+	var droplet_node: RigidBody3D = _droplet_scene.instantiate()
 	# Add the droplet to the scene
-	get_parent().add_child(droplet_node)
-	droplet_node.owner = owner
+	fluid_server.add_child(droplet_node)
+	droplet_node.owner = fluid_server.owner
+	fluid_server.add_droplet(droplet_node)
 	# Set the droplet's position
 	droplet_node.position = Vector3(randf_range(-1.0, 1.0),
 									randf_range(-1.0, 1.0),
 									randf_range(-1.0, 1.0))
+	# Increment current number of droplets
+	_num_droplets += 1

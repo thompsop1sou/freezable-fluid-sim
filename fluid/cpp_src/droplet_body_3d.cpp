@@ -8,11 +8,6 @@ using namespace godot;
 // Needed for exposing stuff to Godot
 void DropletBody3D::_bind_methods()
 {
-	// Property: gloppy_in_editor
-	ClassDB::bind_method(D_METHOD("get_gloppy_in_editor"), &DropletBody3D::get_gloppy_in_editor);
-	ClassDB::bind_method(D_METHOD("set_gloppy_in_editor", "mesh_instance"), &DropletBody3D::set_gloppy_in_editor);
-	ClassDB::add_property("DropletBody3D", PropertyInfo(Variant::BOOL, "gloppy_in_editor"), "set_gloppy_in_editor", "get_gloppy_in_editor");
-
 	// Methods: add_nearby_droplet, remove_nearby_droplet, and clear_nearby_droplets
 	ClassDB::bind_method(D_METHOD("add_nearby_droplet", "new_droplet_body", "new_distance_squared"), &DropletBody3D::add_nearby_droplet, DEFVAL(-1.0));
 	ClassDB::bind_method(D_METHOD("remove_nearby_droplet", "old_droplet_body"), &DropletBody3D::remove_nearby_droplet);
@@ -94,7 +89,6 @@ bool DropletBody3D::NearbyDroplet::operator >= (const NearbyDroplet& other_nearb
 
 DropletBody3D::DropletBody3D() :
 	m_mesh_instance(nullptr),
-	m_gloppy_in_editor(false),
 	m_nearby_droplets(),
 	m_nearby_droplet_mutex(),
 	m_is_solid(false),
@@ -122,28 +116,12 @@ void DropletBody3D::_notification(int what)
 			_on_ready();
 			set_physics_process(true);
 			break;
-		// Handle the physics frame.
-		case NOTIFICATION_PHYSICS_PROCESS:
-			_on_physics_process(get_physics_process_delta_time());
-			break;
 	}
 }
 
 
 
 // Other Functions
-
-// Get whether gloppy in editor.
-bool DropletBody3D::get_gloppy_in_editor() const
-{
-	return m_gloppy_in_editor;
-}
-
-// Set whether gloppy in editor.
-void DropletBody3D::set_gloppy_in_editor(bool gloppy_in_editor)
-{
-	m_gloppy_in_editor = gloppy_in_editor;
-}
 
 // Adds a nearby droplet to the set.
 bool DropletBody3D::add_nearby_droplet(DropletBody3D* new_droplet_body, float new_distance_squared)
@@ -322,34 +300,5 @@ void DropletBody3D::_on_ready()
 	else
 	{
 		UtilityFunctions::printerr("Could not find mesh for ", this);
-	}
-}
-
-// Called every physics frame. 'delta' is the elapsed time since the previous frame.
-void DropletBody3D::_on_physics_process(double delta)
-{
-	// Only run if in game and the mesh is valid
-	if ((m_in_game || m_gloppy_in_editor) && UtilityFunctions::is_instance_valid(m_mesh_instance))
-	{
-		// Lock for thread safety
-		m_nearby_droplet_mutex.lock();
-
-		// Set the shader uniform for the number of droplets (add one for this current droplet)
-		m_mesh_instance->set_instance_shader_parameter(StringName("droplet_count"), m_nearby_droplets.size() + 1);
-
-		// Tell the shader about the nearby droplets
-		int i = 1;
-		std::for_each(m_nearby_droplets.begin(), m_nearby_droplets.end(), [this, &i] (NearbyDroplet nearby_droplet)
-		{
-			// Get the uniform name for the position of droplet i
-			String uniform_name = String("position_") + UtilityFunctions::str(i);
-			i++;
-			// Set the uniform for the position of droplet i
-			Vector3 global_position = nearby_droplet.body->get_global_position();
-			m_mesh_instance->set_instance_shader_parameter(StringName(uniform_name), global_position);
-		});
-
-		// Unlock for thread safety
-		m_nearby_droplet_mutex.unlock();
 	}
 }

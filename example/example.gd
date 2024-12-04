@@ -2,12 +2,12 @@ extends Node3D
 
 
 
-# Properties
+# PROPERTIES
 
-# Alias for the 3D physics server singleton
+# Alias for the 3D physics server singleton.
 var PS3D := PhysicsServer3D
 
-# Whether gravity is currently turned on
+# Whether gravity is currently turned on.
 var is_gravity_on: bool = true:
 	get:
 		return is_gravity_on
@@ -18,9 +18,13 @@ var is_gravity_on: bool = true:
 							PS3D.AREA_PARAM_GRAVITY,
 							gravity)
 
+# Keep a reference to various child nodes.
+@onready var _fluid_server: FluidServer = $FluidServer
+@onready var _droplet_generator: DropletGenerator = $FluidServer/DropletGenerator
 
 
-# Methods
+
+# METHODS
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -31,7 +35,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Update the label for the current frame
 	$LabelsBox/ProcessFPS.text = " Process: " + str(roundf(1.0 / delta)) + " FPS"
-	$LabelsBox/Droplets.text = " Droplets: " + str($DropletGenerator.num_droplets)
+	$LabelsBox/Droplets.text = " Droplets: " + str(_droplet_generator.get_num_droplets())
 
 # Called every physics frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
@@ -40,8 +44,14 @@ func _physics_process(delta: float) -> void:
 
 # Called when there is an input event.
 func _input(event: InputEvent) -> void:
+	# Freeze or melt
+	if event.is_action_pressed("freeze_toggle"):
+		if _fluid_server.is_solid():
+			_fluid_server.liquify()
+		else:
+			_fluid_server.solidify()
 	# Turn gravity on or off
-	if event.is_action_pressed("gravity_toggle"):
+	elif event.is_action_pressed("gravity_toggle"):
 		is_gravity_on = not is_gravity_on
 	# Change the direction of gravity
 	elif event.is_action_pressed("gravity_up"):

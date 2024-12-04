@@ -50,9 +50,6 @@ namespace godot
 		std::set<NearbyDroplet> m_nearby_droplets;
 		std::mutex m_nearby_droplet_mutex;
 
-		// Whether to update graphics while in-editor
-		bool m_gloppy_in_editor;
-
 		// Whether the droplet is currently frozen solid
 		bool m_is_solid;
 
@@ -79,10 +76,6 @@ namespace godot
 		// Overridden functions
 		void _notification(int what);
 
-		// Getter and setter for m_gloppy_in_editor
-		bool get_gloppy_in_editor() const;
-		void set_gloppy_in_editor(bool gloppy_in_editor);
-
 		// Add or remove droplets from the set of nearby droplets
 		bool add_nearby_droplet(DropletBody3D* droplet_body, float distance_squared = -1.0);
 		bool remove_nearby_droplet(DropletBody3D* droplet_body);
@@ -104,7 +97,6 @@ namespace godot
 	private:
 		// Notification methods
 		void _on_ready();
-		void _on_physics_process(double delta);
 	};
 }
 

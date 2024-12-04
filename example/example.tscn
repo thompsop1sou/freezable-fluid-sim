@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://baaebptsoorum"]
 
 [ext_resource type="Script" path="res://example/example.gd" id="1_lp3pp"]
+[ext_resource type="Script" path="res://example/droplet_generator.gd" id="2_oq33w"]
 [ext_resource type="PackedScene" uid="uid://ccm35ko0cu32r" path="res://example/container.tscn" id="2_psroa"]
-[ext_resource type="Script" path="res://example/droplet_generator.gd" id="4_y4u82"]
 
 [sub_resource type="Environment" id="Environment_exfea"]
 ambient_light_source = 2
@@ -16,8 +16,15 @@ ambient_light_energy = 0.5
 [node name="Main" type="Node3D"]
 script = ExtResource("1_lp3pp")
 
-[node name="DropletGenerator" type="Node3D" parent="."]
-script = ExtResource("4_y4u82")
+[node name="FluidServer" type="FluidServer" parent="."]
+ice_body_scene_path = "res://fluid/ice.tscn"
+process_physics_priority = -1
+
+[node name="DropletGenerator" type="Node3D" parent="FluidServer" node_paths=PackedStringArray("fluid_server")]
+script = ExtResource("2_oq33w")
+droplets_to_generate = 500
+fluid_server = NodePath("..")
+droplet_scene_file = "res://fluid/droplet.tscn"
 
 [node name="Container" parent="." instance=ExtResource("2_psroa")]
 

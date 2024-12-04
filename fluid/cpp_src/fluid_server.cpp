@@ -43,8 +43,8 @@ void FluidServer::_bind_methods()
 FluidServer::FluidServer() :
 	m_droplet_records(),
 	m_force_magnitude(25.0),
-	m_force_effective_distance(1.0),
-	m_force_effective_distance_squared(1.0),
+	m_force_effective_distance(0.5),
+	m_force_effective_distance_squared(0.25),
 	m_is_solid(false),
 	m_ice_bodies(),
 	m_ice_body_scene_path(),
