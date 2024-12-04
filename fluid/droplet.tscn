@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3 uid="uid://by867m18841xu"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6pneq"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i3e5n"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_smy6n"]
+friction = 0.05
+bounce = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_exlre"]
+transparency = 1
+albedo_color = Color(0, 0, 1, 0.501961)
+
+[sub_resource type="SphereMesh" id="SphereMesh_x1c8c"]
+material = SubResource("StandardMaterial3D_exlre")
+radial_segments = 12
+rings = 5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_a4bwd"]
+radius = 0.375
+
+[node name="Droplet" type="DropletBody3D"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+solid_material = SubResource("ShaderMaterial_6pneq")
+liquid_material = SubResource("ShaderMaterial_i3e5n")
+collision_layer = 9
+collision_mask = 9
+mass = 4.0
+physics_material_override = SubResource("PhysicsMaterial_smy6n")
+can_sleep = false
+lock_rotation = true
+script = null
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("SphereMesh_x1c8c")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_a4bwd")

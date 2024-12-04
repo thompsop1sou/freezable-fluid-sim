@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://c347336wl3gnw"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_cwwb4"]
+friction = 0.0
+bounce = 0.2
+
+[node name="IceBody3D" type="IceBody3D" groups=["Carriable"]]
+collision_layer = 9
+collision_mask = 9
+physics_material_override = SubResource("PhysicsMaterial_cwwb4")
+can_sleep = false
