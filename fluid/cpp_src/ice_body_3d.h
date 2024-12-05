@@ -1,9 +1,7 @@
 #ifndef ICE_BODY_3D_H
 #define ICE_BODY_3D_H
 
-#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/classes/rigid_body3d.hpp>
-#include <godot_cpp/classes/physics_server3d.hpp>
 #include <godot_cpp/classes/collision_shape3d.hpp>
 #include <godot_cpp/classes/sphere_shape3d.hpp>
 

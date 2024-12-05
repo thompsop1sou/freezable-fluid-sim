@@ -1,5 +1,6 @@
-#include <cmath>
 #include "vec3.h"
+
+#include <cmath>
 
 // Static Member Variables
 

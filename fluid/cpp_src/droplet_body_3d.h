@@ -1,14 +1,12 @@
 #ifndef DROPLET_BODY_3D_H
 #define DROPLET_BODY_3D_H
 
-#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/classes/rigid_body3d.hpp>
 #include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/material.hpp>
 
 #include <set>
 #include <algorithm>
-#include <execution>
 #include <mutex>
 
 namespace godot

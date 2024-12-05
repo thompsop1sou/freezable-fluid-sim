@@ -1,16 +1,13 @@
 #ifndef FLUID_SERVER_H
 #define FLUID_SERVER_H
 
-#include <godot_cpp/variant/vector3.hpp>
-#include <godot_cpp/classes/node.hpp>
-#include <godot_cpp/classes/physics_server3d.hpp>
+#include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
 
 #include <vector>
+#include <unordered_set>
 #include <execution>
 #include <mutex>
-#include <unordered_set>
-#include <memory>
 
 #include "vec3.h"
 #include "droplet_body_3d.h"
