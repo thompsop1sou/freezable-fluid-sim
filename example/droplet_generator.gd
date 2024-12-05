@@ -6,15 +6,12 @@ extends Node3D
 # PUBLIC PROPERTIES
 
 ## How much time between each droplet generation.
-@export var generation_interval: float = 0.01
-
-## The maximum number of droplets that can be generated.
-## Should not be greater than CppDropletServer.MAX_DROPLETS or CsDropletServer.MaxDroplets.
-const MAX_DROPLETS = 4000
+@export_custom(PROPERTY_HINT_NONE, "suffix:s")
+var generation_interval: float = 0.01
 
 ## The number of droplets to generate.
-@export_range(0, MAX_DROPLETS)
-var droplets_to_generate: int = 2000
+@export_range(0, 2000, 1, "or_greater")
+var droplets_to_generate: int = 1000
 
 ## The fluid server that the generated droplets should be added to.
 @export var fluid_server: FluidServer

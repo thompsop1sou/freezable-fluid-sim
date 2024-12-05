@@ -25,9 +25,9 @@ void FluidServer::_bind_methods()
 	ClassDB::bind_method(D_METHOD("add_droplet", "droplet_body"), &FluidServer::add_droplet);
 	ClassDB::bind_method(D_METHOD("remove_droplet", "droplet_body"), &FluidServer::remove_droplet);
 
-	// Methods: solidify, liquify, and is_solid
+	// Methods: solidify, liquefy, and is_solid
 	ClassDB::bind_method(D_METHOD("solidify"), &FluidServer::solidify);
-	ClassDB::bind_method(D_METHOD("liquify"), &FluidServer::liquify);
+	ClassDB::bind_method(D_METHOD("liquefy"), &FluidServer::liquefy);
 	ClassDB::bind_method(D_METHOD("is_solid"), &FluidServer::is_solid);
 	
 	// Property: ice_body_scene_path
@@ -165,7 +165,7 @@ bool FluidServer::remove_droplet(DropletBody3D* old_droplet_body)
 			old_droplet_body->reparent(this, true);
 			old_droplet_body->set_owner(get_owner());
 			// Start processing on it again
-			old_droplet_body->liquify();
+			old_droplet_body->liquefy();
 		}
 		// The removed droplet shouldn't have any nearby droplets anymore
 		old_droplet_body->clear_nearby_droplets();
@@ -254,7 +254,7 @@ void FluidServer::solidify()
 	m_is_solid = true;
 }
 
-void FluidServer::liquify()
+void FluidServer::liquefy()
 {
 	// Return early if already liquid
 	if (!m_is_solid)
@@ -268,7 +268,7 @@ void FluidServer::liquify()
 			[this] (IceBody3D::DropletCollision& droplet_collision)
 		{
 			droplet_collision.droplet_body->reparent(this);
-			droplet_collision.droplet_body->liquify();
+			droplet_collision.droplet_body->liquefy();
 		});
 		// Delete the ice body
 		ice_body->queue_free();

@@ -19,8 +19,8 @@ var is_gravity_on: bool = true:
 							gravity)
 
 # Keep a reference to various child nodes.
-@onready var _fluid_server: FluidServer = $FluidServer
-@onready var _droplet_generator: DropletGenerator = $FluidServer/DropletGenerator
+@onready var fluid_server: FluidServer = $FluidServer
+@onready var droplet_generator: DropletGenerator = $DropletGenerator
 
 
 
@@ -35,7 +35,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Update the label for the current frame
 	$LabelsBox/ProcessFPS.text = " Process: " + str(roundf(1.0 / delta)) + " FPS"
-	$LabelsBox/Droplets.text = " Droplets: " + str(_droplet_generator.get_num_droplets())
+	$LabelsBox/Droplets.text = " Droplets: " + str(droplet_generator.get_num_droplets())
 
 # Called every physics frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
@@ -46,10 +46,10 @@ func _physics_process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	# Freeze or melt
 	if event.is_action_pressed("freeze_toggle"):
-		if _fluid_server.is_solid():
-			_fluid_server.liquify()
+		if fluid_server.is_solid():
+			fluid_server.liquefy()
 		else:
-			_fluid_server.solidify()
+			fluid_server.solidify()
 	# Turn gravity on or off
 	elif event.is_action_pressed("gravity_toggle"):
 		is_gravity_on = not is_gravity_on

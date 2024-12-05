@@ -21,9 +21,6 @@ namespace godot
 		// Let FluidServer access private/protected members
 		friend class FluidServer;
 
-		// The maximum number of nearby droplets that can be sent to the shader
-		static const int NEARBY_DROPLET_COUNT_MAX = 12;
-
 	private:
 		// A struct holding information about a nearby droplet
 		struct NearbyDroplet
@@ -83,7 +80,7 @@ namespace godot
 
 		// Solidifies/liquifies the droplet
 		void solidify();
-		void liquify();
+		void liquefy();
 
 		// Getter for whether the droplet is frozen solid
 		bool is_solid() const;

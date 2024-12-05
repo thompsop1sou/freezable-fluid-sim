@@ -20,10 +20,9 @@ script = ExtResource("1_lp3pp")
 ice_body_scene_path = "res://fluid/ice.tscn"
 process_physics_priority = -1
 
-[node name="DropletGenerator" type="Node3D" parent="FluidServer" node_paths=PackedStringArray("fluid_server")]
+[node name="DropletGenerator" type="Node3D" parent="." node_paths=PackedStringArray("fluid_server")]
 script = ExtResource("2_oq33w")
-droplets_to_generate = 500
-fluid_server = NodePath("..")
+fluid_server = NodePath("../FluidServer")
 droplet_scene_file = "res://fluid/droplet.tscn"
 
 [node name="Container" parent="." instance=ExtResource("2_psroa")]

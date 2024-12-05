@@ -13,9 +13,9 @@ void DropletBody3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("remove_nearby_droplet", "old_droplet_body"), &DropletBody3D::remove_nearby_droplet);
 	ClassDB::bind_method(D_METHOD("clear_nearby_droplets"), &DropletBody3D::clear_nearby_droplets);
 
-	// Methods: solidify, liquify, and is_solid
+	// Methods: solidify, liquefy, and is_solid
 	ClassDB::bind_method(D_METHOD("solidify"), &DropletBody3D::solidify);
-	ClassDB::bind_method(D_METHOD("liquify"), &DropletBody3D::liquify);
+	ClassDB::bind_method(D_METHOD("liquefy"), &DropletBody3D::liquefy);
 	ClassDB::bind_method(D_METHOD("is_solid"), &DropletBody3D::is_solid);
 
 	// Property: solid_material
@@ -138,22 +138,12 @@ bool DropletBody3D::add_nearby_droplet(DropletBody3D* new_droplet_body, float ne
 		new_nearby_droplet.distance_squared = get_global_position().distance_squared_to(new_droplet_body->get_global_position());
 	}
 
-	// If the number of nearby droplets is already at max...
-	if (m_nearby_droplets.size() >= NEARBY_DROPLET_COUNT_MAX)
+	// Find the furthest droplet
+	auto furthest_droplet_iter = --(m_nearby_droplets.end());
+	// Only add the new droplet if it is closer than the furthest droplet
+	if (new_nearby_droplet < *furthest_droplet_iter)
 	{
-		// Find the furthest droplet
-		auto furthest_droplet_iter = --(m_nearby_droplets.end());
-		// Only add the new droplet if it is closer than the furthest droplet
-		if (new_nearby_droplet < *furthest_droplet_iter)
-		{
-			m_nearby_droplets.erase(furthest_droplet_iter);
-			m_nearby_droplets.insert(new_nearby_droplet);
-			result = true;
-		}
-	}
-	// Otherwise, if not at max, we can just add the new droplet
-	else
-	{
+		m_nearby_droplets.erase(furthest_droplet_iter);
 		m_nearby_droplets.insert(new_nearby_droplet);
 		result = true;
 	}
@@ -229,13 +219,13 @@ void DropletBody3D::solidify()
 	}
 }
 
-void DropletBody3D::liquify()
+void DropletBody3D::liquefy()
 {
 	// Return early if already melted
 	if (!m_is_solid)
 		return;
 
-	// Unfreeze/liquify
+	// Unfreeze/liquefy
 	m_is_solid = false;
 	set_freeze_enabled(false);
 

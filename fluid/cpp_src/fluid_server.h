@@ -90,7 +90,7 @@ namespace godot
 
 		// Solidifies/liquifies the droplets in this server
 		void solidify();
-		void liquify();
+		void liquefy();
 
 		// Getter and setter for ice body scene path
 		String get_ice_body_scene_path() const;
