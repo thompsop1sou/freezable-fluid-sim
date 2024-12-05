@@ -59,10 +59,11 @@ func _generate_droplet()  -> void:
 	# Add the droplet to the scene
 	fluid_server.add_child(droplet_node)
 	droplet_node.owner = fluid_server.owner
-	fluid_server.add_droplet(droplet_node)
 	# Set the droplet's position
 	droplet_node.position = Vector3(randf_range(-1.0, 1.0),
 									randf_range(-1.0, 1.0),
 									randf_range(-1.0, 1.0))
+	# Add the droplet to the server
+	fluid_server.add_droplet(droplet_node)
 	# Increment current number of droplets
 	_num_droplets += 1

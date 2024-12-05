@@ -111,12 +111,12 @@ bool FluidServer::add_droplet(DropletBody3D* new_droplet_body)
 		// If the fluid is currently solid, make sure the droplet is solid also
 		if (m_is_solid)
 		{
-			// Stop processing on the droplet
-			new_droplet_body->solidify();
 			// Create the ice body
 			IceBody3D* ice_body = create_ice_body();
 			// Add the droplet to it
 			ice_body->add_droplet(new_droplet_body);
+			// Stop processing on the droplet
+			new_droplet_body->solidify();
 		}
 		return true;
 	}
