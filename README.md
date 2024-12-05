@@ -6,6 +6,6 @@
 
 This is a real-time fluid simulation that uses Godot's built-in [RigidBody3D](https://docs.godotengine.org/en/stable/classes/class_rigidbody3d.html) nodes as individual droplets of fluid. One significant contribution that this project makes is the inclusion of a "fluid server". This server applies cohesive forces to attract the droplets to each other. This helps to sell the illusion that the fluid has surface tension and viscosity. The other significant contribution from this project is the ability to freeze the droplets into ice blocks and then melt them again afterward.
 
-[freezable_fluid_sim.webm](https://github.com/user-attachments/assets/d016daad-bf3d-4adf-ab8a-5a26cfd4562c)
+[freezable_fluid_sim_2.webm](https://github.com/user-attachments/assets/b4e7a4fa-e55c-436b-835b-9fd2c3d9db7a)
 
 *More details to follow soon...*
