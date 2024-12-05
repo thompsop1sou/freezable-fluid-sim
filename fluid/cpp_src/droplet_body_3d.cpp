@@ -137,16 +137,9 @@ bool DropletBody3D::add_nearby_droplet(DropletBody3D* new_droplet_body, float ne
 	{
 		new_nearby_droplet.distance_squared = get_global_position().distance_squared_to(new_droplet_body->get_global_position());
 	}
-
-	// Find the furthest droplet
-	auto furthest_droplet_iter = --(m_nearby_droplets.end());
-	// Only add the new droplet if it is closer than the furthest droplet
-	if (new_nearby_droplet < *furthest_droplet_iter)
-	{
-		m_nearby_droplets.erase(furthest_droplet_iter);
-		m_nearby_droplets.insert(new_nearby_droplet);
-		result = true;
-	}
+	// Insert the new droplet
+	m_nearby_droplets.insert(new_nearby_droplet);
+	result = true;
 
 	// Unlock for thread safety
 	m_nearby_droplet_mutex.unlock();
