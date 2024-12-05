@@ -101,10 +101,10 @@ namespace godot
 
 	private:
 		// Adds droplets recursively to a set (helper for freeze())
-		void add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set, Vec3& droplet_set_position);
+		void add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set);
 
-		// Creates a new ice body at a given position, adds it to the array of ice bodies, and returns it
-		IceBody3D* create_ice_body(Vector3 ice_body_global_position = Vector3());
+		// Creates a new ice body, adds it to the array of ice bodies, and returns it
+		IceBody3D* create_ice_body();
 
 		// Notification methods
 		void _on_ready();

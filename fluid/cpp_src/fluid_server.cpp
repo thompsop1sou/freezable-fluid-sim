@@ -116,7 +116,7 @@ bool FluidServer::add_droplet(DropletBody3D* new_droplet_body)
 			// Stop processing on the droplet
 			new_droplet_body->solidify();
 			// Create the ice body
-			IceBody3D* ice_body = create_ice_body(new_droplet_body->get_global_position());
+			IceBody3D* ice_body = create_ice_body();
 			// Add the droplet to it
 			ice_body->add_droplet(new_droplet_body);
 		}
@@ -216,8 +216,6 @@ void FluidServer::solidify()
 	// First loop to stop processing and group droplets together into a set
 	std::for_each(m_droplet_records.begin(), m_droplet_records.end(), [this, &droplet_sets, &droplet_set_positions] (DropletRecord& droplet_record)
 	{
-		// Stop processing
-		droplet_record.body->solidify();
 		// Test if it's already in a set
 		std::vector<DropletSet>::iterator found_set_iter = std::find_if(droplet_sets.begin(), droplet_sets.end(), [&droplet_record] (DropletSet& droplet_set)
 		{
@@ -229,7 +227,7 @@ void FluidServer::solidify()
 			// Add it to a new set (and its nearby droplets recursively)
 			DropletSet new_droplet_set = DropletSet();
 			Vec3 new_droplet_set_position = Vec3::ZERO;
-			add_droplet_to_set(droplet_record.body, new_droplet_set, new_droplet_set_position);
+			add_droplet_to_set(droplet_record.body, new_droplet_set);
 			// Add that set to the dynamic array of sets
 			droplet_sets.push_back(new_droplet_set);
 			droplet_set_positions.push_back(new_droplet_set_position);
@@ -242,11 +240,12 @@ void FluidServer::solidify()
 		// Get the index of the current droplet set
 		int index = &droplet_set - &droplet_sets.front();
 		// Create a new ice body
-		IceBody3D* ice_body = create_ice_body(Vector3(droplet_set_positions[index]));
+		IceBody3D* ice_body = create_ice_body();
 		// Add the droplets to it
 		std::for_each(droplet_set.begin(), droplet_set.end(), [&ice_body] (DropletBody3D* droplet_body)
 		{
 			ice_body->add_droplet(droplet_body);
+			droplet_body->solidify();
 		});
 	});
 
@@ -300,31 +299,28 @@ void FluidServer::set_ice_body_scene_path(const String ice_body_scene_path)
 }
 
 // Adds droplets recursively to a set (helper for solidify())
-void FluidServer::add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set, Vec3& droplet_set_position)
+void FluidServer::add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set)
 {
 	// If droplet has not been added...
 	if (droplet_set.find(droplet_body) == droplet_set.end())
 	{
 		// Add it to the set
 		droplet_set.insert(droplet_body);
-		// Update the average position
-		droplet_set_position = (droplet_set_position * (droplet_set.size() - 1.0) + droplet_body->get_global_position()) / droplet_set.size();
 		// Recurse over the nearby droplets
 		std::for_each(droplet_body->m_nearby_droplets.begin(), droplet_body->m_nearby_droplets.end(),
-			[this, &droplet_set, &droplet_set_position] (DropletBody3D::NearbyDroplet next_nearby_droplet)
+			[this, &droplet_set] (DropletBody3D::NearbyDroplet next_nearby_droplet)
 		{
-			add_droplet_to_set(next_nearby_droplet.body, droplet_set, droplet_set_position);
+			add_droplet_to_set(next_nearby_droplet.body, droplet_set);
 		});
 	}
 }
 
 // Creates a new ice body at a given position, adds it to the array of ice bodies, and returns it
-IceBody3D* FluidServer::create_ice_body(Vector3 ice_body_global_position)
+IceBody3D* FluidServer::create_ice_body()
 {
 	IceBody3D* ice_body = Object::cast_to<IceBody3D>(m_ice_body_scene->instantiate());
 	add_child(ice_body);
 	ice_body->set_owner(get_owner());
-	ice_body->set_global_position(ice_body_global_position);
 	m_ice_bodies.push_back(ice_body);
 	return ice_body;
 }

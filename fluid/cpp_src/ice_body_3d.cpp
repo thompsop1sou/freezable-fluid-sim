@@ -70,6 +70,8 @@ IceBody3D::IceBody3D() :
 	m_frozen_droplet_collision->set_shape(memnew(SphereShape3D));
 	m_frozen_droplet_shape = m_frozen_droplet_collision->get_shape();
 	m_frozen_droplet_shape->set_radius(m_frozen_droplet_radius);
+	// Center of mass should not be calculated automatically
+	set_center_of_mass_mode(CENTER_OF_MASS_MODE_CUSTOM);
 }
 
 IceBody3D::~IceBody3D()
@@ -124,8 +126,21 @@ bool IceBody3D::add_droplet(DropletBody3D* new_droplet_body)
 		new_collision_shape->set_global_position(new_droplet_body->get_global_position());
 		// Add them to the set
 		m_droplet_collisions.push_back(DropletCollision(new_droplet_body, new_collision_shape));
-		// Increment the mass of this ice body
-		set_mass(get_mass() + new_droplet_body->get_mass());
+		// Update the mass of this ice body
+		float old_mass = m_droplet_collisions.size() > 1 ? get_mass() : 0.0;
+		float droplet_mass = new_droplet_body->get_mass();
+		float new_mass = old_mass + droplet_mass;
+		set_mass(new_mass);
+		// Update the center of mass of this ice body
+		Vector3 old_center = get_center_of_mass();
+		Vector3 droplet_center = new_droplet_body->get_global_position();
+		Vector3 new_center = (old_center * old_mass + to_local(droplet_center) * droplet_mass) / new_mass;
+		set_center_of_mass(new_center);
+		// Update the velocity of this ice body (to conserve momentum)
+		Vector3 old_linear_velocity = get_linear_velocity();
+		Vector3 droplet_linear_velocity = new_droplet_body->get_linear_velocity();
+		Vector3 new_linear_velocity = (old_linear_velocity * old_mass + droplet_linear_velocity * droplet_mass) / new_mass;
+		set_linear_velocity(new_linear_velocity);
 		return true;
 	}
 	// Found, so don't add it
