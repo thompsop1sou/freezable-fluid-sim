@@ -83,7 +83,7 @@ void FluidServer::_notification(int what)
 bool FluidServer::add_droplet(DropletBody3D* new_droplet_body)
 {
 	// See if it already exists in the dynamic array
-	std::vector<DropletRecord>::iterator found_location = std::find_if(m_droplet_records.begin(), m_droplet_records.end(),
+	auto found_location = std::find_if(m_droplet_records.begin(), m_droplet_records.end(),
 		[new_droplet_body] (DropletRecord& droplet_record)
 	{
 		return droplet_record.body == new_droplet_body;
@@ -130,7 +130,7 @@ bool FluidServer::add_droplet(DropletBody3D* new_droplet_body)
 bool FluidServer::remove_droplet(DropletBody3D* old_droplet_body)
 {
 	// Try to find it
-	std::vector<DropletRecord>::iterator found_location = std::find_if(m_droplet_records.begin(), m_droplet_records.end(),
+	auto found_location = std::find_if(m_droplet_records.begin(), m_droplet_records.end(),
 		[&old_droplet_body] (DropletRecord& droplet_record)
 	{
 		return droplet_record.body == old_droplet_body;
@@ -148,17 +148,15 @@ bool FluidServer::remove_droplet(DropletBody3D* old_droplet_body)
 		if (m_is_solid)
 		{
 			// Remove it from its ice body
-			std::for_each(m_ice_bodies.begin(), m_ice_bodies.end(), [old_droplet_body] (IceBody3D* ice_body)
+			for (IceBody3D* ice_body : m_ice_bodies)
 			{
 				ice_body->remove_droplet(old_droplet_body);
-			});
+			}
 			// Inform nearby droplets that it is gone
-			std::for_each(old_droplet_body->m_nearby_droplets.begin(), old_droplet_body->m_nearby_droplets.end(),
-				[old_droplet_body] (DropletBody3D::NearbyDroplet nearby_droplet)
+			for (DropletBody3D::NearbyDroplet nearby_droplet : old_droplet_body->m_nearby_droplets)
 			{
-				if (nearby_droplet.body->remove_nearby_droplet(old_droplet_body))
-					UtilityFunctions::print("Removing ", old_droplet_body, " from ", nearby_droplet.body);
-			});
+				nearby_droplet.body->remove_nearby_droplet(old_droplet_body);
+			}
 			// Reparent it to the fluid server
 			old_droplet_body->reparent(this, true);
 			old_droplet_body->set_owner(get_owner());
@@ -212,10 +210,11 @@ void FluidServer::solidify()
 	std::vector<Vec3> droplet_set_positions;
 
 	// First loop to stop processing and group droplets together into a set
-	std::for_each(m_droplet_records.begin(), m_droplet_records.end(), [this, &droplet_sets, &droplet_set_positions] (DropletRecord& droplet_record)
+	for (DropletRecord& droplet_record : m_droplet_records)
 	{
 		// Test if it's already in a set
-		std::vector<DropletSet>::iterator found_set_iter = std::find_if(droplet_sets.begin(), droplet_sets.end(), [&droplet_record] (DropletSet& droplet_set)
+		auto found_set_iter = std::find_if(droplet_sets.begin(), droplet_sets.end(),
+			[&droplet_record] (DropletSet& droplet_set)
 		{
 			return droplet_set.find(droplet_record.body) != droplet_set.end();
 		});
@@ -230,22 +229,22 @@ void FluidServer::solidify()
 			droplet_sets.push_back(new_droplet_set);
 			droplet_set_positions.push_back(new_droplet_set_position);
 		}
-	});
+	}
 
 	// Second loop to create an ice block for each droplet set
-	std::for_each(droplet_sets.begin(), droplet_sets.end(), [this, &droplet_sets, &droplet_set_positions] (DropletSet& droplet_set)
+	for (DropletSet& droplet_set : droplet_sets)
 	{
 		// Get the index of the current droplet set
 		int index = &droplet_set - &droplet_sets.front();
 		// Create a new ice body
 		IceBody3D* ice_body = create_ice_body();
 		// Add the droplets to it
-		std::for_each(droplet_set.begin(), droplet_set.end(), [&ice_body] (DropletBody3D* droplet_body)
+		for (DropletBody3D* droplet_body : droplet_set)
 		{
 			ice_body->add_droplet(droplet_body);
 			droplet_body->solidify();
-		});
-	});
+		}
+	}
 
 	// Mark it as frozen
 	m_is_solid = true;
@@ -258,18 +257,17 @@ void FluidServer::liquefy()
 		return;
 
 	// Loop over each of the ice blocks
-	std::for_each(m_ice_bodies.begin(), m_ice_bodies.end(), [this] (IceBody3D* ice_body)
+	for (IceBody3D* ice_body : m_ice_bodies)
 	{
 		// Remove the droplets from this ice body
-		std::for_each(ice_body->m_droplet_collisions.begin(), ice_body->m_droplet_collisions.end(),
-			[this] (IceBody3D::DropletCollision& droplet_collision)
+		for (IceBody3D::DropletCollision& droplet_collision : ice_body->m_droplet_collisions)
 		{
 			droplet_collision.droplet_body->reparent(this);
 			droplet_collision.droplet_body->liquefy();
-		});
+		}
 		// Delete the ice body
 		ice_body->queue_free();
-	});
+	}
 
 	// Clear the ice body array
 	m_ice_bodies.clear();
@@ -305,11 +303,10 @@ void FluidServer::add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& dr
 		// Add it to the set
 		droplet_set.insert(droplet_body);
 		// Recurse over the nearby droplets
-		std::for_each(droplet_body->m_nearby_droplets.begin(), droplet_body->m_nearby_droplets.end(),
-			[this, &droplet_set] (DropletBody3D::NearbyDroplet next_nearby_droplet)
+		for (DropletBody3D::NearbyDroplet next_nearby_droplet : droplet_body->m_nearby_droplets)
 		{
 			add_droplet_to_set(next_nearby_droplet.body, droplet_set);
-		});
+		}
 	}
 }
 
@@ -348,17 +345,17 @@ void FluidServer::_on_physics_process(double delta)
 	if (m_in_game && !m_is_solid)
 	{
 		// Get the current position of each droplet
-		std::for_each(m_droplet_records.begin(), m_droplet_records.end(), [this] (DropletRecord& droplet_record)
+		for (DropletRecord& droplet_record : m_droplet_records)
 		{
 			droplet_record.position = Vec3(droplet_record.body->get_global_position());
 			droplet_record.body->clear_nearby_droplets();
-		});
+		}
 		// Sum up the forces by looping over pairs of droplets
 		// Outer loop to get first droplet
 		std::for_each(std::execution::par, m_droplet_records.begin(), m_droplet_records.end(), [this] (DropletRecord& droplet_record_a)
 		{
 			// Get an iterator to the first droplet
-			std::vector<DropletRecord>::iterator droplet_a_iter = m_droplet_records.begin() + (&droplet_record_a - &m_droplet_records.front());
+			auto droplet_a_iter = m_droplet_records.begin() + (&droplet_record_a - &m_droplet_records.front());
 			// Inner loop to get second droplet
 			std::for_each(std::execution::par, droplet_a_iter + 1, m_droplet_records.end(), [this, &droplet_record_a] (DropletRecord& droplet_record_b)
 			{
