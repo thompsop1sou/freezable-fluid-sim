@@ -3,6 +3,7 @@
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/physics_direct_body_state3d.hpp>
 
 using namespace godot;
 
@@ -47,7 +48,8 @@ FluidServer::FluidServer() :
 	m_ice_bodies(),
 	m_ice_body_scene_path(),
 	m_ice_body_scene(),
-	m_in_game(false)
+	m_in_game(false),
+	m_physics_server(nullptr)
 {}
 
 FluidServer::~FluidServer()
@@ -205,11 +207,11 @@ void FluidServer::solidify()
 	if (m_is_solid)
 		return;
 
-	// Create the array of droplet sets and their average positions
+	// Create the array of droplet sets and their centers
 	std::vector<DropletSet> droplet_sets;
-	std::vector<Vec3> droplet_set_positions;
+	std::vector<Vector3> droplet_set_centers;
 
-	// First loop to stop processing and group droplets together into a set
+	// First loop to group droplets together into a set
 	for (DropletRecord& droplet_record : m_droplet_records)
 	{
 		// Test if it's already in a set
@@ -223,30 +225,50 @@ void FluidServer::solidify()
 		{
 			// Add it to a new set (and its nearby droplets recursively)
 			DropletSet new_droplet_set = DropletSet();
-			Vec3 new_droplet_set_position = Vec3::ZERO;
-			add_droplet_to_set(droplet_record.body, new_droplet_set);
+			Vector3 new_droplet_set_center = Vector3(0.0, 0.0, 0.0);
+			add_droplet_to_set(droplet_record.body, new_droplet_set, new_droplet_set_center);
 			// Add that set to the dynamic array of sets
 			droplet_sets.push_back(new_droplet_set);
-			droplet_set_positions.push_back(new_droplet_set_position);
+			droplet_set_centers.push_back(new_droplet_set_center);
 		}
 	}
 
 	// Second loop to create an ice block for each droplet set
-	for (DropletSet& droplet_set : droplet_sets)
+	for (int i = 0; i < droplet_sets.size(); ++i)
 	{
-		// Get the index of the current droplet set
-		int index = &droplet_set - &droplet_sets.front();
+		// Get the current set and center
+		DropletSet& droplet_set = droplet_sets[i];
+		Vector3& center = droplet_set_centers[i];
 		// Create a new ice body
 		IceBody3D* ice_body = create_ice_body();
-		// Add the droplets to it
+		ice_body->set_global_position(center);
+		// Add the droplets to it, summing up important values
+		float ice_mass = 0.0;
+		Vector3 ice_linear_momentum = Vector3(0.0, 0.0, 0.0);
+		Vector3 ice_angular_momentum = Vector3(0.0, 0.0, 0.0);
 		for (DropletBody3D* droplet_body : droplet_set)
 		{
-			ice_body->add_droplet(droplet_body);
+			// Sum values
+			float droplet_mass = droplet_body->get_mass();
+			Vector3 droplet_velocity = droplet_body->get_linear_velocity();
+			Vector3 droplet_offset = droplet_body->get_global_position() - center;
+			Vector3 droplet_momentum = droplet_mass * droplet_velocity;
+			ice_mass += droplet_mass;
+			ice_linear_momentum += droplet_momentum;
+			// TODO: double check that this calculation is correct (for use with inertia tensor)
+			ice_angular_momentum += droplet_offset.cross(droplet_momentum);
+			// Add the droplet and freeze it
+			ice_body->quick_add_droplet(droplet_body);
 			droplet_body->solidify();
 		}
+		// Set physics properties of the ice body
+		ice_body->set_mass(ice_mass);
+		ice_body->set_linear_velocity(ice_linear_momentum / ice_mass);
+		Basis ice_inertia_tensor = m_physics_server->body_get_direct_state(ice_body->get_rid())->get_inverse_inertia_tensor();
+		ice_body->set_angular_velocity(ice_inertia_tensor.xform(ice_angular_momentum));
 	}
 
-	// Mark it as frozen
+	// Mark the server as solid
 	m_is_solid = true;
 }
 
@@ -259,11 +281,16 @@ void FluidServer::liquefy()
 	// Loop over each of the ice blocks
 	for (IceBody3D* ice_body : m_ice_bodies)
 	{
-		// Remove the droplets from this ice body
+		// Remove the droplets from this ice body, setting velocity for each in the process
+		Vector3 ice_linear_velocity = ice_body->get_linear_velocity();
+		Vector3 ice_angular_velocity = ice_body->get_angular_velocity();
 		for (IceBody3D::DropletCollision& droplet_collision : ice_body->m_droplet_collisions)
 		{
 			droplet_collision.droplet_body->reparent(this);
 			droplet_collision.droplet_body->liquefy();
+			Vector3 droplet_offset = droplet_collision.droplet_body->get_global_position() - ice_body->get_global_position();
+			Vector3 droplet_velocity = ice_linear_velocity + ice_angular_velocity.cross(droplet_offset);
+			droplet_collision.droplet_body->set_linear_velocity(droplet_velocity);
 		}
 		// Delete the ice body
 		ice_body->queue_free();
@@ -295,17 +322,18 @@ void FluidServer::set_ice_body_scene_path(const String ice_body_scene_path)
 }
 
 // Adds droplets recursively to a set (helper for solidify())
-void FluidServer::add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set)
+void FluidServer::add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set, Vector3& droplet_set_center)
 {
 	// If droplet has not been added...
 	if (droplet_set.find(droplet_body) == droplet_set.end())
 	{
 		// Add it to the set
 		droplet_set.insert(droplet_body);
+		droplet_set_center = (droplet_set_center * (droplet_set.size() - 1.0) + droplet_body->get_global_position()) / droplet_set.size();
 		// Recurse over the nearby droplets
 		for (DropletBody3D::NearbyDroplet next_nearby_droplet : droplet_body->m_nearby_droplets)
 		{
-			add_droplet_to_set(next_nearby_droplet.body, droplet_set);
+			add_droplet_to_set(next_nearby_droplet.body, droplet_set, droplet_set_center);
 		}
 	}
 }
@@ -329,6 +357,11 @@ void FluidServer::_on_ready()
 {
 	// Determine whether the game is running
 	m_in_game = !Engine::get_singleton()->is_editor_hint();
+	// Get a reference to the physics server
+	if (m_in_game)
+	{
+		m_physics_server = PhysicsServer3D::get_singleton();
+	}
 	// Set this to process sooner than everything else
 	set_physics_process_priority(-1);
 	// Load up the ice body scene

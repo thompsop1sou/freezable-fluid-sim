@@ -68,6 +68,10 @@ namespace godot
 		// Adds/removes a droplet from the ice body
 		bool add_droplet(DropletBody3D* new_droplet_body);
 		bool remove_droplet(DropletBody3D* old_droplet_body);
+
+	private:
+		// Adds a droplet to the ice body without any safety checks or property updates
+		void quick_add_droplet(DropletBody3D* new_droplet_body);
 	};
 }
 

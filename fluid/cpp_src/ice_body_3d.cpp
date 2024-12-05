@@ -107,39 +107,23 @@ bool IceBody3D::add_droplet(DropletBody3D* new_droplet_body)
 	// Not found, so add it
 	if (found_location == m_droplet_collisions.end())
 	{
-		// Add it as a child
-		if (UtilityFunctions::is_instance_valid(new_droplet_body->get_parent()))
-		{
-			new_droplet_body->reparent(this, true);
-			new_droplet_body->set_owner(get_owner());
-		}
-		else
-		{
-			add_child(new_droplet_body);
-			new_droplet_body->set_owner(get_owner());
-		}
-		// Create a new collision shape corresponding to the droplet
-		CollisionShape3D* new_collision_shape = Object::cast_to<CollisionShape3D>(m_frozen_droplet_collision->duplicate());
-		add_child(new_collision_shape);
-		new_collision_shape->set_owner(get_owner());
-		new_collision_shape->set_global_position(new_droplet_body->get_global_position());
-		// Add them to the set
-		m_droplet_collisions.push_back(DropletCollision(new_droplet_body, new_collision_shape));
-		// Update the mass of this ice body
+		quick_add_droplet(new_droplet_body);
+		// Update ice mass
 		float old_mass = m_droplet_collisions.size() > 1 ? get_mass() : 0.0;
 		float droplet_mass = new_droplet_body->get_mass();
 		float new_mass = old_mass + droplet_mass;
 		set_mass(new_mass);
-		// Update the center of mass of this ice body
+		// Update ice center of mass
 		Vector3 old_center = get_center_of_mass();
 		Vector3 droplet_center = new_droplet_body->get_global_position();
 		Vector3 new_center = (old_center * old_mass + to_local(droplet_center) * droplet_mass) / new_mass;
 		set_center_of_mass(new_center);
-		// Update the velocity of this ice body (to conserve momentum)
+		// Update ice velocity (to conserve momentum)
 		Vector3 old_linear_velocity = get_linear_velocity();
 		Vector3 droplet_linear_velocity = new_droplet_body->get_linear_velocity();
 		Vector3 new_linear_velocity = (old_linear_velocity * old_mass + droplet_linear_velocity * droplet_mass) / new_mass;
 		set_linear_velocity(new_linear_velocity);
+		// TODO: conserve angular momentum
 		return true;
 	}
 	// Found, so don't add it
@@ -168,9 +152,45 @@ bool IceBody3D::remove_droplet(DropletBody3D* old_droplet_body)
 		DropletCollision old_droplet_collision = *found_location;
 		old_droplet_collision.collision_shape->queue_free();
 		m_droplet_collisions.erase(found_location);
-		set_mass(get_mass() - old_droplet_collision.droplet_body->get_mass());
+		// Update ice mass
+		float old_mass = m_droplet_collisions.size() > 1 ? get_mass() : 0.0;
+		float droplet_mass = old_droplet_body->get_mass();
+		float new_mass = old_mass - droplet_mass;
+		set_mass(new_mass);
+		// Update ice center of mass
+		Vector3 old_center = get_center_of_mass();
+		Vector3 droplet_center = old_droplet_body->get_global_position();
+		Vector3 new_center = (old_center * old_mass - to_local(droplet_center) * droplet_mass) / new_mass;
+		set_center_of_mass(new_center);
+		// Update droplet velocity (to conserve momentum)
+		old_droplet_body->set_linear_velocity(get_linear_velocity());
+		// TODO: conserve angular momentum
 		return true;
 	}
+}
+
+// Adds a droplet to the ice body without any safety checks or property updates
+
+void IceBody3D::quick_add_droplet(DropletBody3D* new_droplet_body)
+{
+	// Add it as a child
+	if (UtilityFunctions::is_instance_valid(new_droplet_body->get_parent()))
+	{
+		new_droplet_body->reparent(this, true);
+		new_droplet_body->set_owner(get_owner());
+	}
+	else
+	{
+		add_child(new_droplet_body);
+		new_droplet_body->set_owner(get_owner());
+	}
+	// Create a new collision shape corresponding to the droplet
+	CollisionShape3D* new_collision_shape = Object::cast_to<CollisionShape3D>(m_frozen_droplet_collision->duplicate());
+	add_child(new_collision_shape);
+	new_collision_shape->set_owner(get_owner());
+	new_collision_shape->set_global_position(new_droplet_body->get_global_position());
+	// Add them to the set
+	m_droplet_collisions.push_back(DropletCollision(new_droplet_body, new_collision_shape));
 }
 
 // Getters and setters for frozen droplet radius

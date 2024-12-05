@@ -22,7 +22,6 @@ process_physics_priority = -1
 
 [node name="DropletGenerator" type="Node3D" parent="." node_paths=PackedStringArray("fluid_server")]
 script = ExtResource("2_oq33w")
-droplets_to_generate = 500
 fluid_server = NodePath("../FluidServer")
 droplet_scene_file = "res://fluid/droplet.tscn"
 

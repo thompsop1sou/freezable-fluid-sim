@@ -3,6 +3,7 @@
 
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
+#include <godot_cpp/classes/physics_server3d.hpp>
 
 #include <vector>
 #include <unordered_set>
@@ -61,6 +62,9 @@ namespace godot
 		// Whether currently in-game
 		bool m_in_game;
 
+		// A reference to the physics server
+		PhysicsServer3D* m_physics_server;
+
 	protected:
 		// Needed for exposing stuff to Godot
 		static void _bind_methods();
@@ -98,7 +102,7 @@ namespace godot
 
 	private:
 		// Adds droplets recursively to a set (helper for freeze())
-		void add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set);
+		void add_droplet_to_set(DropletBody3D* droplet_body, DropletSet& droplet_set, Vector3& droplet_set_center);
 
 		// Creates a new ice body, adds it to the array of ice bodies, and returns it
 		IceBody3D* create_ice_body();
